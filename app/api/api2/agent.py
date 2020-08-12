@@ -1,9 +1,7 @@
 from aiohttp import web
 from app.api.api2.baseview import baseview
-routes = web.RouteTableDef()
 
-@routes.view('/api/api2/agent')
-class OperationView(BaseView):
+class AgentView(BaseView):
     async def get(self):
         data = self.request
         access = await self.auth_svc.get_permissions(self.request)
@@ -15,8 +13,6 @@ class OperationView(BaseView):
             raise web.HTTPBadRequest(content_type='application/json', text=json.dumps(e.messages))
         except Exception as e:
             self.log.error(repr(e), exc_info=True)
-
-    async def post(self):
 
     async def delete(self):
         data = self.request
@@ -32,4 +28,8 @@ class OperationView(BaseView):
             await agent.gui_modification(**data)
             return agent.display
 
-app.router.add_routes(routes)
+    async def enable(self)
+        routes = web.RouteTableDef()
+        @routes.view('/api/api2/agent')
+        app.router.add_routes(routes)
+

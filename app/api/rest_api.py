@@ -14,7 +14,7 @@ from app.objects.secondclass.c_link import Link
 from app.service.app_svc import Error
 from app.service.auth_svc import check_authorization
 from app.utility.base_world import BaseWorld
-
+from app.api.api2.startroutes import StartRoute
 
 class RestApi(BaseWorld):
 
@@ -27,6 +27,7 @@ class RestApi(BaseWorld):
         self.rest_svc = services.get('rest_svc')
         asyncio.get_event_loop().create_task(CampaignPack(services).enable())
         asyncio.get_event_loop().create_task(AdvancedPack(services).enable())
+        asyncio.get_event_loop().create_task(StartRoute().StartStuff(services))
 
     async def enable(self):
         self.app_svc.application.router.add_static('/gui', 'static/', append_version=True)

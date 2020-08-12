@@ -1,10 +1,8 @@
 from aiohttp import web
 from app.api.api2.baseview import baseview
 
-routes = web.RouteTableDef()
 
-@routes.view('/api/api2/adversary')
-class OperationView(baseview):
+class AdversaryView(baseview):
     async def get(self):
         data = self.request
         access = await self.auth_svc.get_permissions(self.request)
@@ -18,11 +16,13 @@ class OperationView(baseview):
             self.log.error(repr(e), exc_info=True)
 
 
-
-    async def post(self):
-
     async def delete(self):
         data = self.request:
         return await self._delete_data_from_memory_and_disk(ram_key='adversaries', identifier='adversary_id', data=data)
 
-app.router.add_routes(routes)
+
+     async def enable(self)
+        routes = web.RouteTableDef()
+        @routes.view('/api/api2/adversary')
+        app.router.add_routes(routes)
+
