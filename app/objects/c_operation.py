@@ -223,6 +223,7 @@ class Operation(FirstClassObjectInterface, BaseObject):
             obj = await services.get('data_svc').locate('objectives', match=dict(name='default'))
         self.objective = deepcopy(obj[0])
         try:
+            await services.get('event_svc').fire_event('operation/started', op=self.id)
             # Operation cedes control to planner
             planner = await self._get_planning_module(services)
             await planner.execute()
