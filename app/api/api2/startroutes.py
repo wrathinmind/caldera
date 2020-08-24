@@ -8,11 +8,11 @@ from app.api.api2.sources import SourceView
 from app.api.api2.agent import AgentView
 from app.api.api2.contact import ContactView
 from app.api.api2.planner import PlannerView
-from app.api.api2.Obfuscator import ObfuscatorView
-from app.api.api2.Schedule import ScheduleView
+from app.api.api2.obfuscator import ObfuscatorView
+from app.api.api2.schedule import ScheduleView
 
-class BaseView(BaseWorld, web.view):
-    def __init__(self, services):
+class StartRoute(BaseWorld):
+    def StartStuff(self, services):
         asyncio.get_event_loop().create_task(ConfigurationView(services).enable())
         asyncio.get_event_loop().create_task(AdversaryView(services).enable())
         asyncio.get_event_loop().create_task(OperationView(services).enable())
