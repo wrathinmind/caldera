@@ -3,6 +3,9 @@ import base64
 import copy
 import os
 import subprocess
+import glob
+from importlib import import_module
+
 
 from aiohttp import web
 from cryptography.fernet import Fernet
@@ -25,6 +28,8 @@ class FileSvc(FileServiceInterface, BaseService):
         self.special_payloads = dict()
         self.encryptor = self._get_encryptor()
         self.encrypt_output = False if self.get_config('encrypt_files') is False else True
+        self.payload_options = dict()
+        self.packers = self._load_packers('app/utility/packers')
 
     async def get_file(self, headers):
         if 'file' not in headers:
@@ -45,6 +50,8 @@ class FileSvc(FileServiceInterface, BaseService):
             display_name = headers.get('name')
         if file_path.endswith('.xored'):
             display_name = file_path.replace('.xored', '')
+        if self.get_payload_packer(payload):
+            file_path, contents = self.get_payload_packer(payload).pack_payload(file_path, contents)
         return file_path, contents, display_name
 
     async def save_file(self, filename, payload, target_dir, encrypt=True):
@@ -141,6 +148,12 @@ class FileSvc(FileServiceInterface, BaseService):
                     return k, k
         return payload, payload
 
+    def get_payload_packer(self, payload):
+        payloads = {p['id']: p for t in ['standard_payloads', 'special_payloads'] for pname, p in self.get_config(prop=t, name='payloads').items()}
+        if payload in payloads and 'packer' in payloads[payload]:
+            if payloads[payload]['packer'] in self.packers:
+                return self.packers[payloads[payload]['packer']]
+
     """ PRIVATE """
 
     def _save(self, filename, content, encrypt=True):
@@ -163,6 +176,14 @@ class FileSvc(FileServiceInterface, BaseService):
                                    iterations=2 ** 20,
                                    backend=default_backend())
         return Fernet(base64.urlsafe_b64encode(generated_key.derive(bytes(self.get_config('encryption_key'), 'utf-8'))))
+
+    @staticmethod
+    def _load_packers(path):
+        packers = dict()
+        for module in glob.iglob('%s/**.py' % path):
+            packer = import_module(module.replace('/', '.').replace('\\', '.').replace('.py', ''))
+            packers[packer.name] = packer
+        return packers
 
     async def _operate_extension(self, payload, headers):
         try:
