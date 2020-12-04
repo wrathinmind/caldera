@@ -35,7 +35,10 @@ class FileSvc(FileServiceInterface, BaseService):
         if 'file' not in headers:
             raise KeyError('File key was not provided')
 
+        packer = None
         display_name = payload = headers.get('file')
+        if ':' in payload:
+            _, display_name = packer, payload = payload.split(':')
         if any(payload.endswith(x) for x in [y for y in self.special_payloads if y.startswith('.')]):
             payload, display_name = await self._operate_extension(payload, headers)
         if self.is_uuid4(payload):
@@ -43,6 +46,8 @@ class FileSvc(FileServiceInterface, BaseService):
         if payload in self.special_payloads:
             payload, display_name = await self.special_payloads[payload](headers)
         file_path, contents = await self.read_file(payload)
+        if packer and packer in self.packers:
+            file_path, contents = await self.get_payload_packer(packer).pack(file_path, contents)
         if headers.get('xor_key'):
             xor_key = headers['xor_key']
             contents = xor_bytes(contents, xor_key.encode())
@@ -50,8 +55,6 @@ class FileSvc(FileServiceInterface, BaseService):
             display_name = headers.get('name')
         if file_path.endswith('.xored'):
             display_name = file_path.replace('.xored', '')
-        if self.get_payload_packer(payload):
-            file_path, contents = self.get_payload_packer(payload).pack_payload(file_path, contents)
         return file_path, contents, display_name
 
     async def save_file(self, filename, payload, target_dir, encrypt=True):
@@ -148,11 +151,8 @@ class FileSvc(FileServiceInterface, BaseService):
                     return k, k
         return payload, payload
 
-    def get_payload_packer(self, payload):
-        payloads = {p['id']: p for t in ['standard_payloads', 'special_payloads'] for pname, p in self.get_config(prop=t, name='payloads').items()}
-        if payload in payloads and 'packer' in payloads[payload]:
-            if payloads[payload]['packer'] in self.packers:
-                return self.packers[payloads[payload]['packer']]
+    def get_payload_packer(self, packer):
+        return self.packers[packer].Packer(self)
 
     """ PRIVATE """
 

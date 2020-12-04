@@ -125,8 +125,7 @@ class ContactService(ContactServiceInterface, BaseService):
                            command=link.command,
                            executor=link.ability.executor,
                            timeout=link.ability.timeout,
-                           payloads=payloads,
-                           packer=link.ability.packer)
+                           payloads=payloads)
 
     async def _add_agent_to_operation(self, agent):
         """Determine which operation(s) incoming agent belongs to and
