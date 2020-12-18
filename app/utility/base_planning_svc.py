@@ -80,8 +80,12 @@ class BasePlanningService(BaseService):
         """
         completed_links = [(l.command_hash if l.command_hash else l.command) for l in operation.chain
                            if l.paw == agent.paw and (l.finish or l.can_ignore())]
+
+        singleton_links = BasePlanningService._list_historic_duplicate_singletons(operation)
+
         return [l for l in links if l.ability.repeatable or
-                (l.command_hash if l.command_hash else l.command) not in completed_links]
+                ((l.command_hash if l.command_hash else l.command) not in completed_links
+                 and (l.command_hash if l.command_hash else l.command not in singleton_links))]
 
     @staticmethod
     async def remove_links_missing_facts(links):
@@ -112,6 +116,38 @@ class BasePlanningService(BaseService):
         return links
 
     """ PRIVATE """
+
+    @staticmethod
+    def _list_historic_duplicate_singletons(operation):
+        """
+        Generate a list of successfully run singleton abilities for a given operation
+        :param operation: Operation to scan
+        :return: List of command hashes for succeeded singleton abilities
+        """
+        singleton = [k for k in operation.chain if k.status == k.states['SUCCESS'] and k.ability.singleton]
+        return [(x.command_hash if x.command_hash else x.command) for x in singleton if x]
+
+    @staticmethod
+    def _cross_check_agents_for_duplicate_singletons(agent_links):
+        """
+        Filter links across agents
+        :param agent_links: array of agent links
+        :return: Flattened, filtered list of links
+        """
+
+        links = []
+        parallel_list = []
+        for agent_list in agent_links:
+            for individual_link in agent_list:
+                if not individual_link.ability.singleton:
+                    links.append(individual_link)
+                else:
+                    compare = (individual_link.command_hash if individual_link.command_hash else
+                               individual_link.command)
+                    if compare not in parallel_list:
+                        parallel_list.append(compare)
+                        links.append(individual_link)
+        return links
 
     @staticmethod
     async def _build_single_test_variant(copy_test, combo, executor):
