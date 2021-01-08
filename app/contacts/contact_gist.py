@@ -42,7 +42,6 @@ class Contact(BaseWorld):
             self.exported = True
             return b''.join(self.chunks)
 
-
     def __init__(self, services):
         self.name = 'gist'
         self.description = 'Use gist for C2'
@@ -53,7 +52,6 @@ class Contact(BaseWorld):
 
         # Stores uploaded file chunks. Maps paw to dict that maps upload ID to GistUpload object
         self.pending_uploads = defaultdict(lambda: dict())
-
 
     def retrieve_config(self):
         return self.key
